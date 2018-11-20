@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Collidius Rectanculi</title>
+    <meta charset="UTF-8">
+    <meta name="description" content="Rectangles that the player may collide into"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <script src="felicius-helperus.js" charset="utf-8"></script>
+    <script src="ludantus.js" charset="utf-8"></script>
+    <style>
+      body {
+        margin: 0;
+        font-size: 0;
+      }
+      #rectangle-wrapper {
+        position: absolute;
+        transform: translate(100px, 50px);
+      }
+      .rectangle, #player {
+        position: absolute;
+        top: 0;
+        left: 0;
+        border: 1px solid black;
+        background-color: rgba(255, 255, 255, 0.5);
+        box-sizing: border-box;
+      }
+      #player {
+        width: 10px;
+        height: 10px;
+        background-color: rgba(255, 0, 0, 0.5);
+      }
+      .highlight {
+        border-color: blue;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="rectangle-wrapper">
+      <div id="player"></div>
+    </div>
+    <script>
+const rectangles = [
+  {x: -10, y: -20, width: 100, height: 10, type: 'solid'},
+  {x: -50, y: 10, width: 50, height: 10, type: 'solid'},
+  {x: -10, y: -10, width: 10, height: 20, type: 'solid'}
+];
+const PLAYER_SIZE = 10;
+const rectWrapper = document.getElementById('rectangle-wrapper');
+const playerElem = document.getElementById('player');
+class DumbPlayer extends Player {
+
+  constructor(initX, initY, size) {
+    super();
+    this.x = initX;
+    this.y = initY;
+    this.width = size;
+    this.height = size;
+    this.xv = this.yv = 0;
+    this.highlightedRect = null;
+  }
+
+  move() {
+    if (keys[37]) this.xv--;
+    if (keys[38]) this.yv--;
+    if (keys[39]) this.xv++;
+    if (keys[40]) this.yv++;
+    if (keys[65]) this.x--;
+    if (keys[87]) this.y--;
+    if (keys[68]) this.x++;
+    if (keys[83]) this.y++;
+    if (beSmart) {
+      this.xv *= 0.8;
+      this.yv *= 0.8;
+    }
+    const {xv, yv, rect} = this.checkCollisions(this, rectangles);
+    playerElem.style.boxShadow = `${xv}px ${yv}px 0 rgba(0, 255, 0, 0.5), ${this.xv}px ${this.yv}px 0 rgba(0, 255, 255, 0.5)`;
+    if (rect) {
+      if (this.highlightedRect)
+        this.highlightedRect.elem.classList.remove('highlight');
+      if (beSmart) {
+        this.xv = xv;
+        this.yv = yv;
+      }
+      rect.elem.classList.add('highlight');
+      this.highlightedRect = rect;
+    }
+    else if (this.highlightedRect)
+      this.highlightedRect.elem.classList.remove('highlight');
+    if (beSmart) {
+      this.x += this.xv;
+      this.y += this.yv;
+    }
+    playerElem.style.transform = `translate(${this.x}px, ${this.y}px)`;
+  }
+
+}
+let beSmart = true;
+const player = new DumbPlayer(0, 0, PLAYER_SIZE);
+function move() {
+  player.move();
+  window.requestAnimationFrame(move);
+}
+rectWrapper.appendChild(createFragment(rectangles.map(rect => rect.elem = createElement('div', {
+  classes: 'rectangle',
+  styles: {
+    width: rect.width + 'px',
+    height: rect.height + 'px',
+    transform: `translate(${rect.x}px, ${rect.y}px)`
+  }
+}))));
+const keys = {};
+document.addEventListener('keydown', e => {
+  keys[e.keyCode] = true;
+});
+document.addEventListener('keyup', e => {
+  keys[e.keyCode] = false;
+});
+move();
+    </script>
+  </body>
+</html>
