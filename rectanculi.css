@@ -1,0 +1,24 @@
+body {
+  margin: 0;
+  font-size: 0;
+}
+#rectangle-wrapper {
+  position: absolute;
+  transform: translate(100px, 50px);
+}
+.rectangle, #player {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border: 1px solid black;
+  background-color: rgba(255, 255, 255, 0.5);
+  box-sizing: border-box;
+}
+#player {
+  width: 10px;
+  height: 10px;
+  background-color: rgba(255, 0, 0, 0.5);
+}
+.highlight {
+  border-color: blue;
+}

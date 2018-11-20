@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <title>Collidius Rectanculi - Quantum Honkibilia</title>
+    <title>Gravitatus Mundus - Quantum Honkibilia</title>
     <meta charset="UTF-8">
-    <meta name="description" content="Rectangles that the player may collide into"/>
+    <meta name="description" content="Collidius rectanculi but with gravity"/>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <link rel="stylesheet" href="rectanculi.css">
     <script src="felicius-helperus.js" charset="utf-8"></script>
@@ -22,7 +22,6 @@ const rectangles = [
   {x: -10, y: -10, width: 10, height: 20, type: 'solid'}
 ];
 recognizeRectangles(rectangles);
-const PLAYER_SIZE = 10;
 class DumbPlayer extends Player {
 
   constructor(initX, initY, size) {
@@ -32,47 +31,29 @@ class DumbPlayer extends Player {
     this.width = size;
     this.height = size;
     this.xv = this.yv = 0;
-    this.highlightedRect = null;
+    this.onground = false;
   }
 
   move() {
     if (keys[37]) this.xv--;
-    if (keys[38]) this.yv--;
+    if (keys[38] && this.onground) this.yv -= 7;
     if (keys[39]) this.xv++;
-    if (keys[40]) this.yv++;
-    if (keys[65]) this.x--;
-    if (keys[87]) this.y--;
-    if (keys[68]) this.x++;
-    if (keys[83]) this.y++;
-    if (beSmart) {
-      this.xv *= 0.8;
-      this.yv *= 0.8;
-    }
+    this.xv *= 0.8;
+    this.yv += 0.5;
     const {xv, yv, rect, side} = this.checkCollisions(this, rectangles);
-    playerElem.style.boxShadow = `${xv}px ${yv}px 0 rgba(0, 255, 0, 0.5), ${this.xv}px ${this.yv}px 0 rgba(0, 255, 255, 0.5)`;
     if (rect) {
-      if (this.highlightedRect)
-        this.highlightedRect.elem.classList.remove('highlight');
-      if (beSmart) {
-        this.xv = xv;
-        this.yv = yv;
-      }
-      rect.elem.classList.add('highlight');
-      this.highlightedRect = rect;
+      this.xv = xv;
+      this.yv = yv;
     }
-    else if (this.highlightedRect)
-      this.highlightedRect.elem.classList.remove('highlight');
-    if (beSmart) {
-      this.x += this.xv;
-      this.y += this.yv;
-    }
+    this.onground = side === 'top';
+    this.x += this.xv;
+    this.y += this.yv;
     playerElem.style.transform = `translate(${this.x}px, ${this.y}px)`;
   }
 
 }
-let beSmart = window.location.search !== '?dumb';
 const playerElem = document.getElementById('player');
-const player = new DumbPlayer(0, 0, PLAYER_SIZE);
+const player = new DumbPlayer(-20, -20, 10);
 function move() {
   player.move();
   window.requestAnimationFrame(move);
