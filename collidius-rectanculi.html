@@ -72,7 +72,7 @@ class DumbPlayer extends Player {
       this.xv *= 0.8;
       this.yv *= 0.8;
     }
-    const {xv, yv, rect} = this.checkCollisions(this, rectangles);
+    const {xv, yv, rect, side} = this.checkCollisions(this, rectangles);
     playerElem.style.boxShadow = `${xv}px ${yv}px 0 rgba(0, 255, 0, 0.5), ${this.xv}px ${this.yv}px 0 rgba(0, 255, 255, 0.5)`;
     if (rect) {
       if (this.highlightedRect)
@@ -94,7 +94,7 @@ class DumbPlayer extends Player {
   }
 
 }
-let beSmart = true;
+let beSmart = window.location.search !== '?dumb';
 const player = new DumbPlayer(0, 0, PLAYER_SIZE);
 function move() {
   player.move();
