@@ -32,7 +32,7 @@ class DumbPlayer extends Player {
     this.width = size;
     this.height = size;
     this.xv = this.yv = 0;
-    this.highlightedRect = null;
+    this.highlightedRects = [];
   }
 
   move() {
@@ -48,20 +48,22 @@ class DumbPlayer extends Player {
       this.xv *= 0.8;
       this.yv *= 0.8;
     }
-    const {xv, yv, rect, side} = this.checkCollisions(this, rectangles);
+    const {xv, yv, rects} = this.checkCollisions(this, rectangles);
     playerElem.style.boxShadow = `${xv}px ${yv}px 0 rgba(0, 255, 0, 0.5), ${this.xv}px ${this.yv}px 0 rgba(0, 255, 255, 0.5)`;
-    if (rect) {
-      if (this.highlightedRect)
-        this.highlightedRect.elem.classList.remove('highlight');
+    if (rects.length) {
+      if (this.highlightedRects.length) {
+        this.highlightedRects.forEach(r => r.elem.classList.remove('highlight'));
+      }
       if (beSmart) {
         this.xv = xv;
         this.yv = yv;
       }
-      rect.elem.classList.add('highlight');
-      this.highlightedRect = rect;
+      rects.forEach(r => r.elem.classList.add('highlight'));
+      this.highlightedRects = rects;
+    } else if (this.highlightedRects.length) {
+      this.highlightedRects.forEach(r => r.elem.classList.remove('highlight'));
+      this.highlightedRects = [];
     }
-    else if (this.highlightedRect)
-      this.highlightedRect.elem.classList.remove('highlight');
     if (beSmart) {
       this.x += this.xv;
       this.y += this.yv;

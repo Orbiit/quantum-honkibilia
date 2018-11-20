@@ -13,7 +13,7 @@ class Player {
   checkCollisions(playerData, rectangles) {
     const {x, y, width, height, xv, yv} = playerData;
     if (xv === 0 && yv === 0) {
-      return {xv: xv, yv: yv, rect: null, side: null};
+      return {xv: xv, yv: yv, rects: []};
     }
     let closestHorizRect = null, closestVertRect = null;
     rectangles.forEach(rect => {
@@ -76,21 +76,23 @@ class Player {
       }
     });
     if (closestHorizRect || closestVertRect) {
-      let rect = closestHorizRect || closestVertRect;
-      if (closestHorizRect && closestVertRect) {
-        if (closestVertRect.squareDist < closestHorizRect.squareDist)
-          rect = closestVertRect;
-      }
       const obj = {
         xv: xv, yv: yv,
-        rect: rect.rect,
-        side: rect.side
+        rects: []
       };
-      if (closestHorizRect) obj.xv = closestHorizRect.newxv;
-      if (closestVertRect) obj.yv = closestVertRect.newyv;
+      if (closestHorizRect) {
+        obj.xv = closestHorizRect.newxv;
+        obj[closestHorizRect.side] = true;
+        obj.rects.push(closestHorizRect.rect);
+      }
+      if (closestVertRect) {
+        obj.yv = closestVertRect.newyv;
+        obj[closestVertRect.side] = true;
+        obj.rects.push(closestVertRect.rect);
+      }
       return obj;
     }
-    else return {xv: xv, yv: yv, rect: null, side: null};
+    else return {xv: xv, yv: yv, rects: []};
   }
 
 }

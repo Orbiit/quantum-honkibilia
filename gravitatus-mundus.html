@@ -9,25 +9,56 @@
     <script src="felicius-helperus.js" charset="utf-8"></script>
     <script src="ludantus.js" charset="utf-8"></script>
     <script src="rectanculi.js" charset="utf-8"></script>
+    <style media="screen">
+      #mouse-coord {
+        position: fixed;
+        top: 0;
+        left: 0;
+        opacity: 0.5;
+        font-size: 16px;
+      }
+      .end {
+        background-color: rgba(60, 240, 0, 0.5);
+      }
+    </style>
   </head>
   <body>
+    <p id="mouse-coord"></p>
     <div id="rectangle-wrapper">
       <div id="player"></div>
     </div>
     <script src="keys.js" charset="utf-8"></script>
     <script>
 const rectangles = [
-  {x: -10, y: -20, width: 100, height: 10, type: 'solid'},
-  {x: -50, y: 10, width: 50, height: 10, type: 'solid'},
-  {x: -10, y: -10, width: 10, height: 20, type: 'solid'}
+  {x: 310, y: 510, width: 10, height: 10, type: 'solid'},
+  {x: 50, y: 10, width: 100, height: 10, type: 'solid'},
+  {x: 10, y: 40, width: 50, height: 10, type: 'solid'},
+  {x: 50, y: 20, width: 10, height: 20, type: 'solid'},
+  {x: 140, y: 20, width: 10, height: 100, type: 'solid'},
+  {x: 140, y: 120, width: 150, height: 10, type: 'solid'},
+  {x: 180, y: -50, width: 10, height: 150, type: 'solid'},
+  {x: 290, y: 0, width: 10, height: 130, type: 'solid'},
+  {x: 260, y: 90, width: 30, height: 10, type: 'solid'},
+  {x: 220, y: 60, width: 10, height: 10, type: 'solid'},
+  {x: 250, y: 20, width: 10, height: 10, type: 'solid'},
+  {x: 290, y: 250, width: 10, height: 10, type: 'solid'},
+  {x: 200, y: 220, width: 50, height: 10, type: 'solid'},
+  {x: 200, y: 230, width: 10, height: 130, type: 'solid'},
+  {x: 200, y: 360, width: 180, height: 10, type: 'solid'},
+  {x: 380, y: -50, width: 10, height: 420, type: 'solid'},
+  {x: 190, y: 250, width: 10, height: 10, type: 'solid'},
+  {x: 190, y: 320, width: 10, height: 10, type: 'solid'},
+  {x: 200, y: 400, width: 50, height: 10, type: 'solid'},
+  {x: 0, y: -50, width: 10, height: 100, type: 'solid'}
 ];
 recognizeRectangles(rectangles);
+rectangles[0].elem.classList.add('end');
 class DumbPlayer extends Player {
 
   constructor(initX, initY, size) {
     super();
-    this.x = initX;
-    this.y = initY;
+    this.x = this.initX = initX;
+    this.y = this.initY = initY;
     this.width = size;
     this.height = size;
     this.xv = this.yv = 0;
@@ -35,17 +66,25 @@ class DumbPlayer extends Player {
   }
 
   move() {
-    if (keys[37]) this.xv--;
-    if (keys[38] && this.onground) this.yv -= 7;
-    if (keys[39]) this.xv++;
+    if (keys[37] || keys[65]) this.xv--;
+    if ((keys[38] || keys[87]) && this.onground) this.yv = -7;
+    if (keys[39] || keys[68]) this.xv++;
+    if (keys[82]) {
+      this.x = this.initX;
+      this.y = this.initY;
+      this.xv = this.yv = 0;
+    }
     this.xv *= 0.8;
     this.yv += 0.5;
-    const {xv, yv, rect, side} = this.checkCollisions(this, rectangles);
-    if (rect) {
+    if (Math.abs(this.xv) > 20 || Math.abs(this.yv) > 20)
+      console.warn(`Going dangerously fast at <${this.xv}, ${this.yv}>`);
+    const collisions = this.checkCollisions(this, rectangles); // TODO: more checks when going fast
+    const {xv, yv, rects} = collisions;
+    if (rects.length) {
       this.xv = xv;
       this.yv = yv;
     }
-    this.onground = side === 'top';
+    this.onground = collisions.top;
     this.x += this.xv;
     this.y += this.yv;
     playerElem.style.transform = `translate(${this.x}px, ${this.y}px)`;
@@ -53,12 +92,16 @@ class DumbPlayer extends Player {
 
 }
 const playerElem = document.getElementById('player');
-const player = new DumbPlayer(-20, -20, 10);
+const player = new DumbPlayer(20, 20, 10);
 function move() {
   player.move();
   window.requestAnimationFrame(move);
 }
 move();
+const coordDisplay = document.getElementById('mouse-coord');
+document.addEventListener('mousemove', e => {
+  coordDisplay.textContent = `(${Math.floor(e.clientX /10) * 10 - 100}, ${Math.floor(e.clientY /10) * 10 - 50})`;
+});
     </script>
   </body>
 </html>
