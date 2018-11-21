@@ -205,6 +205,7 @@ document.addEventListener('keydown', e => {
       const index = rectangles.indexOf(selectedRect);
       if (~index) rectangles.splice(index, 1);
       selectedRect = null;
+      window.location.replace('#' + exportLevel());
     }
   } else if (e.keyCode === 32) {
     editing = !editing;
