@@ -63,10 +63,10 @@ document.addEventListener('wheel', e => {
 });
 class ActualPlayer extends Player {
 
-  constructor(initX, initY) {
+  constructor() {
     super();
-    this.x = initX;
-    this.y = initY;
+    this.x = 0;
+    this.y = 0;
     this.width = 10;
     this.height = 10;
     this.xv = this.yv = 0;
@@ -106,7 +106,7 @@ let selectedType = 0;
 const specialBlocks = {
   start: {x: 0, y: 0, width: 10, height: 10, role: 'start'}
 };
-let editing = true;
+let editing = false;
 let tempRect = null;
 let selectedRect = null;
 document.addEventListener('mousedown', e => {
@@ -298,7 +298,8 @@ if (window.location.hash) {
   importLevel(window.location.hash.slice(1));
 }
 window.location.replace('#' + exportLevel());
-const player = new ActualPlayer(5, -5);
+const player = new ActualPlayer();
+player.reset();
 draw();
 function exportRect(rect) {
   const roleID = blockTypes.findIndex(([, role]) => role === rect.role);

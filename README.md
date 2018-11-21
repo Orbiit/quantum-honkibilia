@@ -12,7 +12,7 @@ The [Rectanculous Renderorus editor](https://orbiit.github.io/quantum-honkibilia
 
 ## Editing mode
 
-Editing mode is on by default; the grid will be shown while in this mode. You can switch to the non-editing mode by pressing `space`.
+The grid will be shown while in this mode. You can switch to the non-editing mode by pressing `space`.
 
 You can move around the grid using the `WASD` keys (left, up, right, and down respectively). Scroll to zoom in/out.
 
@@ -24,9 +24,9 @@ Click on existing blocks (or the player) to move them around. User-created block
 
 ## Non-editing mode
 
-Likewise, you can return to editing using `space`.
+Likewise, you can return to editing using `space`. This mode is on by default.
 
-`WAD` moves the player; `A` and `D` for horizontal movement, and `W` to jump (standard Scratch platformer WASD controls).
+`WAD` moves the player; `A` and `D` for horizontal movement, and `W` to jump (standard Scratch platformer WASD controls). `R` to suicide.
 
 You can still scroll in/out while in this mode.
 
