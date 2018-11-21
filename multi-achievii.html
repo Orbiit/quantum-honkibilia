@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Multi Achievii</title>
+    <meta charset="UTF-8">
+    <meta name="description" content="Achievement UI design"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <script src="felicius-helperus.js" charset="utf-8"></script>
+    <style>
+      html, body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        font-size: 0;
+      }
+      #notifications {
+        position: fixed;
+        left: 0;
+        bottom: 0;
+        width: 250px;
+      }
+      #all-achievements {
+        float: right;
+        width: 250px;
+        background-color: rgba(0, 0, 0, 0.5);
+        height: 100%;
+        overflow: auto;
+      }
+      .achievement {
+        margin: 10px;
+        padding: 10px;
+        border-radius: 5px;
+        background-color: #999;
+        color: white;
+        height: 46px;
+        white-space: nowrap;
+      }
+      .name {
+        display: block;
+        font-size: 24px;
+      }
+      .description {
+        display: block;
+        font-size: 16px;
+        user-select: none;
+        color: transparent;
+        text-shadow: 0 0 15px white, 0 0 15px white;
+      }
+      .show-hint .achievement:not(.achieved) {
+        background-color: #ded491;
+        color: #7d7542;
+      }
+      .achieved {
+        background-color: #6ea94f;
+      }
+      .achieved .description, .show-hint .description {
+        user-select: unset;
+        color: inherit;
+        text-shadow: unset;
+      }
+      #notifications .achievement {
+        animation: open-wide .2s forwards, fade-away .5s 3s forwards;
+      }
+      @keyframes open-wide {
+        from { height: 0; padding: 0 10px; }
+        to { height: 46px; padding: 10px; }
+      }
+      @keyframes fade-away {
+        from { opacity: 1; }
+        to { opacity: 0; }
+      }
+      #progress {
+        font-size: 24px;
+        font-weight: normal;
+        color: white;
+        margin: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="notifications"></div>
+    <div id="all-achievements">
+      <h1 id="progress"></h1>
+      <span id="separator"></span>
+    </div>
+    <script>
+const achievements = {
+  start: { name: 'Hello, world!', desc: 'Begin the demo' },
+  firstAchievement: { name: 'First words', desc: 'Earn your first achievement' },
+  firstKey: { name: 'First key press', desc: 'Press a key' },
+  firstClick: { name: 'First click', desc: 'Click once' },
+  firstSecond: { name: 'First second', desc: 'Play for a second' },
+  fiveClicks: { name: 'Five clicks', desc: 'Click five times' },
+  tenClicks: { name: 'Ten clicks', desc: 'Click ten times' },
+  twentyClicks: { name: 'Twenty clicks', desc: 'Click twenty times' },
+  mouseMove: { name: 'It moves!', desc: 'Move your mouse' },
+  leavePage: { name: 'Don\'t leave!', desc: 'Switch to a different tab' },
+  o: { name: 'Oh', desc: 'Press the O key' },
+  konami: { name: 'Code', desc: 'Press the konami code' },
+  showHints: { name: 'Hints?', desc: 'Press H to show hints' },
+  hideHints: { name: 'I don\'t need no hints', desc: 'Press H again to hide hints' },
+  resize: { name: 'New sizes', desc: 'Resize the window' },
+  tenAchievements: { name: 'Progress', desc: 'Earn ten achievements' },
+  wheel: { name: 'It spins', desc: 'Scroll with your scroll wheel' },
+  allButMe: { name: 'Almost there', desc: 'Earn all but this achievement' },
+  tenSeconds: { name: 'A decade', desc: 'Play for ten seconds' },
+  alt: { name: 'Alt + F4', desc: 'Press the alt key' }
+};
+const notificationWrapper = document.getElementById('notifications');
+const achievementWrapper = document.getElementById('all-achievements');
+const separator = document.getElementById('separator');
+const progress = document.getElementById('progress');
+let achievementsEarned = 0;
+const achievementCount = Object.keys(achievements).length;
+progress.textContent = achievementsEarned + '/' + achievementCount;
+achievementWrapper.appendChild(createFragment(Object.values(achievements).sort((a, b) => {
+  a = a.name.toLowerCase(), b = b.name.toLowerCase();
+  return a < b ? -1 : a > b ? 1 : 0;
+}).map(ashevma => {
+  const elem = createElement('div', {
+    classes: 'achievement',
+    children: [
+      createElement('span', {
+        classes: 'name',
+        html: ashevma.name
+      }),
+      createElement('span', {
+        classes: 'description',
+        html: ashevma.desc
+      })
+    ]
+  });
+  ashevma.achieved = false;
+  ashevma.trigger = () => {
+    if (!ashevma.achieved) {
+      ashevma.achieved = true;
+      achievementWrapper.insertBefore(elem, separator);
+      elem.classList.add('achieved');
+      notificationWrapper.appendChild(elem.cloneNode(true));
+      achievementsEarned++;
+      progress.textContent = achievementsEarned + '/' + achievementCount;
+      if (achievementsEarned === 1) achievements.firstAchievement.trigger();
+      if (achievementsEarned === 10) achievements.tenAchievements.trigger();
+      if (achievementsEarned === achievementCount - 1) achievements.allButMe.trigger();
+    }
+  };
+  return elem;
+})));
+achievements.start.trigger();
+let konami = [38, 38, 40, 40, 37, 39, 37, 39, 66, 65];
+let konamiProgress = 0;
+document.addEventListener('keydown', e => {
+  achievements.firstKey.trigger();
+  if (e.keyCode === 79) achievements.o.trigger();
+  if (e.keyCode === konami[konamiProgress]) {
+    konamiProgress++;
+    if (konamiProgress >= konami.length) achievements.konami.trigger();
+  } else konamiProgress = 0;
+  if (e.altKey) achievements.alt.trigger();
+  if (e.keyCode === 72) {
+    if (document.body.classList.contains('show-hint')) {
+      document.body.classList.remove('show-hint');
+      achievements.hideHints.trigger();
+    } else {
+      document.body.classList.add('show-hint');
+      achievements.showHints.trigger();
+    }
+  }
+});
+window.addEventListener('blur', e => {
+  achievements.leavePage.trigger();
+});
+window.addEventListener('resize', e => {
+  achievements.resize.trigger();
+});
+window.addEventListener('wheel', e => {
+  achievements.wheel.trigger();
+});
+window.addEventListener('mousemove', e => {
+  achievements.mouseMove.trigger();
+});
+let clicks = 0;
+window.addEventListener('click', e => {
+  clicks++;
+  switch (clicks) {
+    case 1:
+      achievements.firstClick.trigger();
+      break;
+    case 5:
+      achievements.fiveClicks.trigger();
+      break;
+    case 10:
+      achievements.tenClicks.trigger();
+      break;
+    case 20:
+      achievements.twentyClicks.trigger();
+      break;
+  }
+});
+setTimeout(() => achievements.firstSecond.trigger(), 1000);
+setTimeout(() => achievements.tenSeconds.trigger(), 10000);
+    </script>
+  </body>
+</html>
