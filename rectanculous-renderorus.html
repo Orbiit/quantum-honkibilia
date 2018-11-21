@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Rectanculous Renderorus</title>
+    <meta charset="UTF-8">
+    <meta name="description" content="Canvas-based rectangle renderer/editor"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <script src="ludantus.js" charset="utf-8"></script>
+    <script src="keys.js" charset="utf-8"></script>
+    <style media="screen">
+      html, body, #canvas {
+        width: 100%;
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        font-size: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="canvas"></canvas>
+    <script type="text/javascript">
+const canvas = document.getElementById('canvas');
+const c = canvas.getContext('2d');
+const pxr = (window.devicePixelRatio || 1) / (c.webkitBackingStorePixelRatio || c.mozBackingStorePixelRatio || c.msBackingStorePixelRatio || c.oBackingStorePixelRatio || c.backingStorePixelRatio || 1);
+const retina = true;
+function intersectingRects(rect1, rect2) {
+  return rect1.x < rect2.x + rect2.width && rect1.y < rect2.y + rect2.height && rect2.x < rect1.x + rect1.width && rect2.y < rect1.y + rect1.height;
+}
+function inRect(rect, x, y) {
+  return x >= rect.x && y >= rect.y && x < rect.x + rect.width && y < rect.y + rect.height;
+}
+let windowWidth, windowHeight, canvasRect;
+function setCanvasSize() {
+  windowWidth = window.innerWidth;
+  windowHeight = window.innerHeight;
+  canvasRect = {x: 0, y: 0, width: windowWidth, height: windowHeight};
+  if (retina) {
+    canvas.width = windowWidth * pxr;
+    canvas.height = windowHeight * pxr;
+    c.scale(pxr, pxr);
+  } else {
+    canvas.width = windowWidth;
+    canvas.height = windowHeight;
+  }
+}
+setCanvasSize();
+window.addEventListener('resize', setCanvasSize);
+const camera = {x: -windowWidth / 20, y: -windowHeight / 20, scale: 10, xv: 0, yv: 0};
+document.addEventListener('wheel', e => {
+  const change = Math.abs(e.deltaY / 1000) + 1;
+  const oldScale = camera.scale;
+  let xDiff = -camera.x * oldScale - e.clientX, yDiff = -camera.y * oldScale - e.clientY;
+  if (e.deltaY > 0) {
+    if (camera.scale < 0.2) return;
+    camera.scale /= change, xDiff /= change, yDiff /= change;
+  } else if (e.deltaY < 0) {
+    camera.scale *= change, xDiff *= change, yDiff *= change;
+  }
+  camera.x = -(e.clientX + xDiff) / camera.scale;
+  camera.y = -(e.clientY + yDiff) / camera.scale;
+});
+class ActualPlayer extends Player {
+
+  constructor(initX, initY) {
+    super();
+    this.x = initX;
+    this.y = initY;
+    this.width = 10;
+    this.height = 10;
+    this.xv = this.yv = 0;
+    this.onground = false;
+    this.role = 'player';
+  }
+
+  move() {
+    this.xv *= 0.8;
+    this.yv += 0.5;
+    if (this.xv > 15) this.xv = 15;
+    else if (this.xv < -15) this.xv = -15;
+    if (this.yv > 15) this.yv = 15;
+    else if (this.yv < -15) this.yv = -15;
+    const collisions = this.checkCollisions(this, rectangles);
+    const {xv, yv, rects} = collisions;
+    if (rects.length) {
+      this.xv = xv;
+      this.yv = yv;
+      if (rects.find(rect => rect.role === 'danger')) this.reset();
+    }
+    this.onground = collisions.top;
+    this.x += this.xv;
+    this.y += this.yv;
+  }
+
+  reset() {
+    this.x = specialBlocks.start.x;
+    this.y = specialBlocks.start.y;
+    this.xv = this.yv = 0;
+  }
+
+}
+let rectangles = [];
+const blockTypes = [['solid', 'solid'], ['solid', 'danger']];
+let selectedType = 0;
+const specialBlocks = {
+  start: {x: 0, y: 0, width: 10, height: 10, role: 'start'}
+};
+let editing = true;
+let tempRect = null;
+let selectedRect = null;
+document.addEventListener('mousedown', e => {
+  if (!editing) return;
+  const transformedX = e.clientX / camera.scale + camera.x;
+  const transformedY = e.clientY / camera.scale + camera.y;
+  const tileX = Math.floor(transformedX / 10) * 10;
+  const tileY = Math.floor(transformedY / 10) * 10;
+  if (selectedRect && inRect(selectedRect, tileX, tileY)) {
+    selectedRect.selected.dragging = true;
+    selectedRect.selected.offsetX = tileX - selectedRect.x;
+    selectedRect.selected.offsetY = tileY - selectedRect.y;
+  } else if (selectedRect) {
+    selectedRect.selected = false;
+    selectedRect = null;
+  } else if (inRect(player, transformedX, transformedY)) {
+    player.selected = {
+      offsetX: transformedX - player.x,
+      offsetY: transformedY - player.y
+    };
+  } else if (!tempRect) {
+    let rect = Object.values(specialBlocks).find(rect => inRect(rect, tileX, tileY));
+    if (rect) {
+      selectedRect = rect;
+      selectedRect.selected = {
+        offsetX: tileX - rect.x,
+        offsetY: tileY - rect.y,
+        dragging: true
+      };
+    } else {
+      rect = rectangles.find(rect => inRect(rect, tileX, tileY));
+      if (rect) {
+        selectedRect = rect;
+        selectedRect.selected = {
+          offsetX: tileX - rect.x,
+          offsetY: tileY - rect.y,
+          dragging: true
+        };
+      } else {
+        tempRect = {
+          initX: tileX, initY: tileY,
+          rect: {x: tileX, y: tileY, width: 10, height: 10, type: blockTypes[selectedType][0], role: blockTypes[selectedType][1]}
+        };
+      }
+    }
+  }
+});
+document.addEventListener('mousemove', e => {
+  if (!editing) return;
+  const transformedX = e.clientX / camera.scale + camera.x;
+  const transformedY = e.clientY / camera.scale + camera.y;
+  const tileX = Math.floor(transformedX / 10) * 10;
+  const tileY = Math.floor(transformedY / 10) * 10;
+  if (selectedRect) {
+    if (selectedRect.selected.dragging) {
+      selectedRect.x = tileX - selectedRect.selected.offsetX;
+      selectedRect.y = tileY - selectedRect.selected.offsetY;
+    }
+  } else if (player.selected) {
+    player.x = transformedX - player.selected.offsetX;
+    player.y = transformedY - player.selected.offsetY;
+  } else if (tempRect) {
+    if (tileX < tempRect.initX) {
+      tempRect.rect.x = tileX;
+      tempRect.rect.width = tempRect.initX - tileX + 10;
+    } else {
+      tempRect.rect.x = tempRect.initX;
+      tempRect.rect.width = tileX - tempRect.initX + 10;
+    }
+    if (tileY < tempRect.initY) {
+      tempRect.rect.y = tileY;
+      tempRect.rect.height = tempRect.initY - tileY + 10;
+    } else {
+      tempRect.rect.y = tempRect.initY;
+      tempRect.rect.height = tileY - tempRect.initY + 10;
+    }
+  }
+});
+document.addEventListener('mouseup', e => {
+  if (!editing) return;
+  if (selectedRect) {
+    if (selectedRect.selected.dragging) {
+      selectedRect.selected.dragging = false;
+    }
+  } else if (player.selected) {
+    player.selected = false;
+  } else if (tempRect) {
+    rectangles.push(tempRect.rect);
+    tempRect = null;
+  }
+  window.location.replace('#' + exportLevel());
+});
+document.addEventListener('keydown', e => {
+  if (e.keyCode === 8 || e.keyCode === 46) {
+    if (selectedRect) {
+      const index = rectangles.indexOf(selectedRect);
+      if (~index) rectangles.splice(index, 1);
+      selectedRect = null;
+    }
+  } else if (e.keyCode === 32) {
+    editing = !editing;
+  } else if (e.keyCode === 219) {
+    selectedType = (selectedType + blockTypes.length - 1) % blockTypes.length;
+  } else if (e.keyCode === 221) {
+    selectedType = (selectedType + 1) % blockTypes.length;
+  }
+});
+function drawGrid() {
+  c.lineWidth = 1;
+  c.strokeStyle = 'rgba(0, 0, 0, 0.2)';
+  c.beginPath();
+  for (let x = -camera.x % 10 * camera.scale, space = 10 * camera.scale; x < windowWidth; x += space) {
+    c.moveTo(x, 0);
+    c.lineTo(x, windowHeight);
+  }
+  for (let y = -camera.y % 10 * camera.scale, space = 10 * camera.scale; y < windowHeight; y += space) {
+    c.moveTo(0, y);
+    c.lineTo(windowWidth, y);
+  }
+  c.stroke();
+}
+function drawRects(rects) {
+  c.lineWidth = 2;
+  rects.forEach(rect => {
+    const transformedRect = {
+      x: (rect.x - camera.x) * camera.scale,
+      y: (rect.y - camera.y) * camera.scale,
+      width: rect.width * camera.scale,
+      height: rect.height * camera.scale
+    };
+    if (intersectingRects(canvasRect, transformedRect)) {
+      if (rect.selected) {
+        c.strokeStyle = 'rgba(0, 0, 255, 0.8)';
+      } else {
+        c.strokeStyle = 'rgba(0, 0, 0, 0.8)';
+      }
+      c.strokeRect(transformedRect.x + 1, transformedRect.y + 1, transformedRect.width - 2, transformedRect.height - 2);
+      let fill = true;
+      switch (rect.role) {
+        case 'player':
+          c.fillStyle = 'rgba(255, 0, 0, 0.5)';
+          break;
+        case 'start':
+          c.fillStyle = 'rgba(0, 255, 0, 0.5)';
+          break;
+        case 'danger':
+          c.fillStyle = 'rgba(255, 127, 0, 0.5)';
+          break;
+        default:
+          fill = false;
+      }
+      if (fill) c.fillRect(transformedRect.x + 2, transformedRect.y + 2, transformedRect.width - 4, transformedRect.height - 4);
+    }
+  });
+}
+function draw() {
+  c.clearRect(0, 0, windowWidth, windowHeight);
+  if (editing) {
+    drawGrid();
+    drawRects(rectangles);
+    drawRects(Object.values(specialBlocks));
+    drawRects([player]);
+    if (tempRect) drawRects([tempRect.rect]);
+    if (keys[37] || keys[65]) camera.xv -= 3 / camera.scale;
+    if (keys[38] || keys[87]) camera.yv -= 3 / camera.scale;
+    if (keys[39] || keys[68]) camera.xv += 3 / camera.scale;
+    if (keys[40] || keys[83]) camera.yv += 3 / camera.scale;
+    camera.xv *= 0.8;
+    camera.yv *= 0.8;
+    camera.x += camera.xv;
+    camera.y += camera.yv;
+  } else {
+    drawRects(rectangles);
+    drawRects(Object.values(specialBlocks));
+    drawRects([player]);
+    if (keys[37] || keys[65]) player.xv--;
+    if ((keys[38] || keys[87]) && player.onground) player.yv = -7;
+    if (keys[39] || keys[68]) player.xv++;
+    if (keys[82]) {
+      player.reset();
+    }
+    player.move();
+    camera.x += (player.x - windowWidth / 2 / camera.scale - camera.x) / 5;
+    camera.y += (player.y - windowHeight / 2 / camera.scale - camera.y) / 5;
+  }
+  window.requestAnimationFrame(draw);
+}
+if (window.location.hash) {
+  importLevel(window.location.hash.slice(1));
+}
+window.location.replace('#' + exportLevel());
+const player = new ActualPlayer(5, -5);
+draw();
+function exportRect(rect) {
+  const roleID = blockTypes.findIndex(([, role]) => role === rect.role);
+  return [rect.x, rect.y, rect.width, rect.height, ~roleID ? roleID : rect.role].join('.');
+}
+function exportLevel() {
+  return [...Object.values(specialBlocks), ...rectangles].map(exportRect).join('!');
+}
+function importRect(code) {
+  const [x, y, width, height, role] = code.split('.');
+  if (isNaN(+role)) {
+    const rect = Object.values(specialBlocks).find(rect => rect.role === role);
+    if (rect) {
+      rect.x = +x;
+      rect.y = +y;
+      rect.width = +width;
+      rect.height = +height;
+    }
+  } else {
+    const obj = { x: +x, y: +y, width: +width, height: +height };
+    obj.type = blockTypes[+role][0];
+    obj.role = blockTypes[+role][1];
+    rectangles.push(obj);
+  }
+}
+function importLevel(code) {
+  rectangles = [];
+  const rects = code.split('!');
+  rects.forEach(importRect);
+  window.location.replace('#' + exportLevel());
+}
+    </script>
+  </body>
+</html>
