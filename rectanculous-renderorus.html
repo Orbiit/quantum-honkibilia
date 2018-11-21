@@ -47,7 +47,7 @@ function setCanvasSize() {
 }
 setCanvasSize();
 window.addEventListener('resize', setCanvasSize);
-const camera = {x: -windowWidth / 20, y: -windowHeight / 20, scale: 10, xv: 0, yv: 0};
+const camera = {x: -windowWidth / 20, y: -windowHeight / 20, scale: 5, xv: 0, yv: 0};
 document.addEventListener('wheel', e => {
   const change = Math.abs(e.deltaY / 1000) + 1;
   const oldScale = camera.scale;
@@ -100,7 +100,9 @@ class ActualPlayer extends Player {
   }
 
 }
-let rectangles = [];
+let rectangles = [
+  {x: -20, y: 30, width: 50, height: 10, type: 'solid'}
+];
 const blockTypes = [['solid', 'solid'], ['solid', 'danger']];
 let selectedType = 0;
 const specialBlocks = {
@@ -290,8 +292,8 @@ function draw() {
       player.reset();
     }
     player.move();
-    camera.x += (player.x - windowWidth / 2 / camera.scale - camera.x) / 5;
-    camera.y += (player.y - windowHeight / 2 / camera.scale - camera.y) / 5;
+    camera.x += (player.x + 5 - windowWidth / 2 / camera.scale - camera.x) / 5;
+    camera.y += (player.y + 5 - windowHeight / 2 / camera.scale - camera.y) / 5;
   }
   window.requestAnimationFrame(draw);
 }
